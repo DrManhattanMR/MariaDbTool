@@ -1,33 +1,52 @@
-﻿// Program.cs
-using MariaDbTool;
+﻿using MariaDbTool;
 using System;
+using System.IO;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        if (args.Length == 0)
+        if (args.Length < 1)
         {
-            Console.WriteLine("❌ Debes indicar una acción: --backup o --restore");
+            Console.WriteLine("❌ Uso incorrecto.");
+            Console.WriteLine("Ejemplos:");
+            Console.WriteLine("  dotnet run -- --backup [ruta/opcional]");
+            Console.WriteLine("  dotnet run -- --restore ruta");
             return;
         }
 
-        var connectionString = "server=localhost;port=0000;user=username;password=passworduser;database=databasename"; // Cambia por tus valores
+        string action = args[0];
+        string filePath = args.Length >= 2 ? args[1] : null;
+
+        var connectionString = "server=localhost;port=3306;user=root;password=1234;database=midb"; // Ajusta aquí
         var manager = new MariaDbBackupManager(connectionString);
 
-        if (args[0] == "--backup")
+        if (action == "--backup")
         {
-            string backupPath = "backup.sql"; // Puedes personalizar el nombre
-            await manager.BackupAsync(backupPath);
+            if (string.IsNullOrEmpty(filePath))
+            {
+                string folder = "respaldos";
+                Directory.CreateDirectory(folder);
+
+                filePath = Path.Combine(folder, $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.sql");
+                Console.WriteLine($"[INFO] No se proporcionó ruta. Se usará archivo generado automáticamente: {filePath}");
+            }
+
+            await manager.BackupAsync(filePath);
         }
-        else if (args[0] == "--restore")
+        else if (action == "--restore")
         {
-            string restorePath = "backup.sql"; // Asegúrate de que existe
-            await manager.RestoreAsync(restorePath);
+            if (string.IsNullOrEmpty(filePath))
+            {
+                Console.WriteLine("❌ Para restaurar es obligatorio especificar la ruta del archivo SQL.");
+                return;
+            }
+
+            await manager.RestoreAsync(filePath);
         }
         else
         {
-            Console.WriteLine("❌ Opción no reconocida. Usa --backup o --restore");
+            Console.WriteLine("❌ Acción no reconocida. Usa --backup o --restore");
         }
     }
 }
