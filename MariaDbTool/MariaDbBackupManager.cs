@@ -117,5 +117,4 @@ namespace MariaDbTool
             Console.WriteLine("✅ Restauración finalizada.");
         }
     }
-    }
 }
